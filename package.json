@@ -1,0 +1,40 @@
+{
+  "name": "@sbj42/maze-generator-backtrack",
+  "version": "0.1.0",
+  "description": "A recursive backtracking maze generator algorithm",
+  "main": "src",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "mocha && npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sbj42/maze-generator-backtrack.git"
+  },
+  "keywords": [
+    "maze-generator",
+    "maze",
+    "dungeon",
+    "labyrinth",
+    "procedural",
+    "recursive-backtracking"
+  ],
+  "author": "James Clark",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sbj42/maze-generator-backtrack/issues"
+  },
+  "homepage": "https://github.com/sbj42/maze-generator-backtrack#readme",
+  "dependencies": {
+    "@sbj42/maze-generator-support": "^0.1.0"
+  },
+  "devDependencies": {
+    "@sbj42/maze-generator": "^1.0.0",
+    "eslint": "^3.7.1",
+    "mocha": "^3.1.0",
+    "random-js": "^1.0.8"
+  },
+  "peerDependencies": {
+    "@sbj42/maze-generator": "^1.0.0"
+  }
+}
