@@ -2,7 +2,7 @@
   "name": "@sbj42/maze-generator-backtrack",
   "version": "0.1.0",
   "description": "A recursive backtracking maze generator algorithm",
-  "main": "src",
+  "main": "src/backtrack",
   "scripts": {
     "lint": "eslint .",
     "test": "mocha && npm run lint"
