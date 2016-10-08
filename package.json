@@ -1,7 +1,7 @@
 {
   "name": "@sbj42/maze-generator-backtrack",
   "version": "0.1.0",
-  "description": "A recursive backtracking maze generator algorithm",
+  "description": "A recursive-backtracking maze generator algorithm",
   "main": "src/backtrack",
   "scripts": {
     "lint": "eslint .",
@@ -29,12 +29,12 @@
     "@sbj42/maze-generator-support": "^0.1.0"
   },
   "devDependencies": {
-    "@sbj42/maze-generator": "^1.0.0",
+    "@sbj42/maze-generator": "^2.0.0",
     "eslint": "^3.7.1",
     "mocha": "^3.1.0",
     "random-js": "^1.0.8"
   },
   "peerDependencies": {
-    "@sbj42/maze-generator": "^1.0.0"
+    "@sbj42/maze-generator": "^2.0.0"
   }
 }
