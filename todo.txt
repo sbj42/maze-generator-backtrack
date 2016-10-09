@@ -1,1 +1,0 @@
-only put cells with available neighbors on the stack
