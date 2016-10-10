@@ -24,6 +24,8 @@ function randomInt(options, max) {
  * @param {Array} array
  */
 function randomChoice(options, array) {
+    if (array.length == 1)
+        return array[0];
     return array[randomInt(options, array.length)];
 }
 
@@ -81,8 +83,10 @@ function backtrack(maze, options) {
             // If there is at least one such direction, pick
             // one at random
             var dir = randomChoice(options, neighbors);
-            // Push the current cell onto the stack
-            stack.push(cur);
+            // If there were other choices, then push the
+            // current cell onto the stack.
+            if (neighbors.length > 1)
+                stack.push(cur);
             // Dig a passage from the curent cell to the next cell
             maze.setPassage(cur[0], cur[1], dir, true);
             // Move on to the next cell
