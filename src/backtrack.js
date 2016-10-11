@@ -39,12 +39,14 @@ function randomChoice(options, array) {
  */
 function getUnvisitedDirections(visited, pos) {
     var ret = [];
-    for (var i = 0; i < dirs.ALL.length; i ++) {
-        var dir = dirs.ALL[i];
-        var npos = dirs.move(pos[0], pos[1], dir);
-        if (!visited.get(npos[0], npos[1]))
-            ret.push(dir);
-    }
+    if (!visited.get(pos[0], pos[1] - 1))
+        ret.push(dirs.NORTH);
+    if (!visited.get(pos[0] + 1, pos[1]))
+        ret.push(dirs.EAST);
+    if (!visited.get(pos[0], pos[1] + 1))
+        ret.push(dirs.SOUTH);
+    if (!visited.get(pos[0] - 1, pos[1]))
+        ret.push(dirs.WEST);
     return ret;
 }
 
