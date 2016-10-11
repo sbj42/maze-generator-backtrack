@@ -1,6 +1,6 @@
 {
   "name": "@sbj42/maze-generator-backtrack",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A recursive-backtracking maze generator algorithm",
   "main": "src/backtrack",
   "scripts": {
