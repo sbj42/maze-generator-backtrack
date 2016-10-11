@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/sbj42/maze-generator-backtrack#readme",
   "dependencies": {
-    "@sbj42/maze-generator-core": "^0.1.2"
+    "@sbj42/maze-generator-core": "^0.1.3"
   },
   "peerDependencies": {
     "@sbj42/maze-generator": "^2.0.1"

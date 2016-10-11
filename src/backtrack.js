@@ -41,7 +41,8 @@ function getUnvisitedDirections(visited, pos) {
     var ret = [];
     for (var i = 0; i < dirs.ALL.length; i ++) {
         var dir = dirs.ALL[i];
-        if (!visited.get(pos[0] + dirs.dx(dir), pos[1] + dirs.dy(dir)))
+        var npos = dirs.move(pos[0], pos[1], dir);
+        if (!visited.get(npos[0], npos[1]))
             ret.push(dir);
     }
     return ret;
@@ -90,7 +91,7 @@ function backtrack(maze, options) {
             // Dig a passage from the curent cell to the next cell
             maze.setPassage(cur[0], cur[1], dir, true);
             // Move on to the next cell
-            cur = [cur[0] + dirs.dx(dir), cur[1] + dirs.dy(dir)];
+            cur = dirs.move(cur[0], cur[1], dir);
             // Which is now in the maze
             visited.set(cur[0], cur[1], true);
         } else if (stack.length) {
