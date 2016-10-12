@@ -34,18 +34,19 @@ function randomChoice(options, array) {
  * cells that have not been visited (i.e. cells for
  * which visited.get returns false).
  *
+ * @param {MGOptions} options
  * @param {GridMask} visited
  * @param {integer[]} pos
  */
-function getUnvisitedDirections(visited, pos) {
+function getUnvisitedDirections(options, visited, pos) {
     var ret = [];
-    if (!visited.get(pos[0], pos[1] - 1))
+    if (!visited.get(pos[0], pos[1] - 1) && (!options.mask || options.mask.get(pos[0], pos[1] - 1)))
         ret.push(dirs.NORTH);
-    if (!visited.get(pos[0] + 1, pos[1]))
+    if (!visited.get(pos[0] + 1, pos[1]) && (!options.mask || options.mask.get(pos[0] + 1, pos[1])))
         ret.push(dirs.EAST);
-    if (!visited.get(pos[0], pos[1] + 1))
+    if (!visited.get(pos[0], pos[1] + 1) && (!options.mask || options.mask.get(pos[0], pos[1] + 1)))
         ret.push(dirs.SOUTH);
-    if (!visited.get(pos[0] - 1, pos[1]))
+    if (!visited.get(pos[0] - 1, pos[1]) && (!options.mask || options.mask.get(pos[0] - 1, pos[1])))
         ret.push(dirs.WEST);
     return ret;
 }
@@ -67,8 +68,11 @@ function backtrack(maze, options) {
     // included.
     var visited = new GridMask(width, height, {exterior: true});
 
+    var cur;
     // Start with a random cell in the grid
-    var cur = [randomInt(options, width), randomInt(options, height)];
+    do {
+        cur = [randomInt(options, width), randomInt(options, height)];
+    } while (options.mask && !options.mask.get(cur[0], cur[1]));
     // Mark the first cell as visited
     visited.set(cur[0], cur[1], true);
     // This array will hold the cells that we've moved through,
@@ -80,7 +84,7 @@ function backtrack(maze, options) {
 
         // Which directions can we go from this cell,
         // that lead to cells that aren't yet in the maze?
-        var neighbors = getUnvisitedDirections(visited, cur);
+        var neighbors = getUnvisitedDirections(options, visited, cur);
 
         if (neighbors.length) {
             // If there is at least one such direction, pick
@@ -109,5 +113,11 @@ function backtrack(maze, options) {
         }
     }
 }
+
+backtrack.id = 'backtrack';
+backtrack.name = 'recursive-backtracking';
+backtrack.features = {
+    mask: true
+};
 
 module.exports = backtrack;

@@ -54,6 +54,7 @@
 	/* eslint-env browser */
 	var algorithmFunc = __webpack_require__(2);
 	var Maze = __webpack_require__(7).Maze;
+	var GridMask = __webpack_require__(7).GridMask;
 	var dirs = __webpack_require__(7).directions;
 
 	function makeRandom(seed) {
@@ -65,11 +66,28 @@
 	    };
 	}
 
+	function makeMask(width, height) {
+	    var mask = new GridMask(width, height, {
+	        interior: true
+	    });
+	    for (var x = 0 ; x < width; x += 10) {
+	        for (var y = 0; y < height; y += 10) {
+	            for (var xx = 0; xx < 5; xx ++) {
+	                for (var yy = 0; yy < 5; yy ++) {
+	                    mask.set(x + 5 + xx, y + 5 + yy, false);
+	                }
+	            }
+	        }
+	    }
+	    return mask;
+	}
+
 	var go = document.getElementById('go');
 	go.addEventListener('click', function() {
 	    var width = +document.getElementById('width').value;
 	    var height = +document.getElementById('height').value;
 	    var seed = +document.getElementById('seed').value;
+	    var mask = +document.getElementById('mask').checked;
 	    var zoom = 4;
 	    if (!width || !height || width < 1 || height < 1)
 	        return;
@@ -77,6 +95,8 @@
 	    var options = {
 	        random: seed ? makeRandom(seed) : Math.random
 	    };
+	    if (mask)
+	        options.mask = makeMask(width, height);
 
 	    var maze = new Maze(width, height);
 	    algorithmFunc(maze, options);
@@ -94,6 +114,12 @@
 	        var cx, x;
 	        for (x = 0; x < maze.width(); x ++) {
 	            cx = x * (1 + zoom);
+	            if (mask) {
+	                if (!options.mask.get(x, y)) {
+	                    context.fillRect(cx, cy, 1 + zoom, 1 + zoom);
+	                    continue;
+	                }
+	            }
 	            context.fillRect(cx, cy, 1, 1);
 	            if (!maze.getPassage(x, y, dirs.NORTH))
 	                context.fillRect(cx + 1, cy, zoom, 1);
@@ -148,16 +174,20 @@
 	 * cells that have not been visited (i.e. cells for
 	 * which visited.get returns false).
 	 *
+	 * @param {MGOptions} options
 	 * @param {GridMask} visited
 	 * @param {integer[]} pos
 	 */
-	function getUnvisitedDirections(visited, pos) {
+	function getUnvisitedDirections(options, visited, pos) {
 	    var ret = [];
-	    for (var i = 0; i < dirs.ALL.length; i ++) {
-	        var dir = dirs.ALL[i];
-	        if (!visited.get(pos[0] + dirs.dx(dir), pos[1] + dirs.dy(dir)))
-	            ret.push(dir);
-	    }
+	    if (!visited.get(pos[0], pos[1] - 1) && (!options.mask || options.mask.get(pos[0], pos[1] - 1)))
+	        ret.push(dirs.NORTH);
+	    if (!visited.get(pos[0] + 1, pos[1]) && (!options.mask || options.mask.get(pos[0] + 1, pos[1])))
+	        ret.push(dirs.EAST);
+	    if (!visited.get(pos[0], pos[1] + 1) && (!options.mask || options.mask.get(pos[0], pos[1] + 1)))
+	        ret.push(dirs.SOUTH);
+	    if (!visited.get(pos[0] - 1, pos[1]) && (!options.mask || options.mask.get(pos[0] - 1, pos[1])))
+	        ret.push(dirs.WEST);
 	    return ret;
 	}
 
@@ -178,8 +208,11 @@
 	    // included.
 	    var visited = new GridMask(width, height, {exterior: true});
 
+	    var cur;
 	    // Start with a random cell in the grid
-	    var cur = [randomInt(options, width), randomInt(options, height)];
+	    do {
+	        cur = [randomInt(options, width), randomInt(options, height)];
+	    } while (options.mask && !options.mask.get(cur[0], cur[1]));
 	    // Mark the first cell as visited
 	    visited.set(cur[0], cur[1], true);
 	    // This array will hold the cells that we've moved through,
@@ -191,7 +224,7 @@
 
 	        // Which directions can we go from this cell,
 	        // that lead to cells that aren't yet in the maze?
-	        var neighbors = getUnvisitedDirections(visited, cur);
+	        var neighbors = getUnvisitedDirections(options, visited, cur);
 
 	        if (neighbors.length) {
 	            // If there is at least one such direction, pick
@@ -204,7 +237,7 @@
 	            // Dig a passage from the curent cell to the next cell
 	            maze.setPassage(cur[0], cur[1], dir, true);
 	            // Move on to the next cell
-	            cur = [cur[0] + dirs.dx(dir), cur[1] + dirs.dy(dir)];
+	            cur = dirs.move(cur[0], cur[1], dir);
 	            // Which is now in the maze
 	            visited.set(cur[0], cur[1], true);
 	        } else if (stack.length) {
@@ -220,6 +253,12 @@
 	        }
 	    }
 	}
+
+	backtrack.id = 'backtrack';
+	backtrack.name = 'recursive-backtracking';
+	backtrack.features = {
+	    mask: true
+	};
 
 	module.exports = backtrack;
 
@@ -260,14 +299,14 @@
 	        interior = !!options.interior;
 	    this._width = width;
 	    this._height = height;
-	    this._grid = [];
 	    this._exterior = false;
 	    if (options.exterior != null)
 	        this._exterior = !!options.exterior;
-	    var initBlock = interior ? ~0 : 0;
 	    this._blockWidth = (width+31) >> 5;
+	    this._grid = new Array(this._blockWidth * height);
+	    var initBlock = interior ? ~0 : 0;
 	    for (var i = 0; i < this._blockWidth * height; i ++) {
-	        this._grid.push(initBlock);
+	        this._grid[i] = initBlock;
 	    }
 	}
 
@@ -382,10 +421,10 @@
 	        throw new Error('invalid size: ' + width + 'x' + height);
 	    this._width = width;
 	    this._height = height;
-	    this._grid = [];
 	    this._blockWidth = ((width+1)+15) >> 4;
+	    this._grid = new Array(this._blockWidth * (height + 1));
 	    for (var i = 0; i < this._blockWidth * (height + 1); i ++)
-	        this._grid.push(0);
+	        this._grid[i] = 0;
 	}
 
 	/**
@@ -541,7 +580,13 @@
 	 * @return {Direction}
 	 */
 	dirs.opposite = function(dir) {
-	    return [dirs.SOUTH, dirs.WEST, dirs.NORTH, dirs.EAST][dir];
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return 2;
+	        case 1/*dirs.EAST*/: return 3;
+	        case 2/*dirs.SOUTH*/: return 0;
+	        case 3/*dirs.WEST*/: return 1;
+	        default: throw new Error('bad direction: ' + dir);
+	    }
 	};
 
 	/**
@@ -551,7 +596,13 @@
 	 * @return {integer}
 	 */
 	dirs.dx = function(dir) {
-	    return [0, 1, 0, -1][dir];
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return 0;
+	        case 1/*dirs.EAST*/: return 1;
+	        case 2/*dirs.SOUTH*/: return 0;
+	        case 3/*dirs.WEST*/: return -1;
+	        default: throw new Error('bad direction: ' + dir);
+	    }
 	};
 
 	/**
@@ -561,9 +612,32 @@
 	 * @return {integer}
 	 */
 	dirs.dy = function(dir) {
-	    return [-1, 0, 1, 0][dir];
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return -1;
+	        case 1/*dirs.EAST*/: return 0;
+	        case 2/*dirs.SOUTH*/: return 1;
+	        case 3/*dirs.WEST*/: return 0;
+	        default: throw new Error('bad direction: ' + dir);
+	    }
 	};
 
+	/**
+	 * Moves the coordinate in the given direction
+	 *
+	 * @param {integer} x
+	 * @param {integer} y
+	 * @param {Direction} dir
+	 * @return {integer[]}
+	 */
+	dirs.move = function(x, y, dir) {
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return [x, y-1];
+	        case 1/*dirs.EAST*/: return [x+1, y];
+	        case 2/*dirs.SOUTH*/: return [x, y+1];
+	        case 3/*dirs.WEST*/: return [x-1, y];
+	        default: throw new Error('bad direction: ' + dir);
+	    }
+	};
 
 	/**
 	 * Returns a bitmask for the direction, useful for
@@ -616,14 +690,14 @@
 	        interior = !!options.interior;
 	    this._width = width;
 	    this._height = height;
-	    this._grid = [];
 	    this._exterior = false;
 	    if (options.exterior != null)
 	        this._exterior = !!options.exterior;
-	    var initBlock = interior ? ~0 : 0;
 	    this._blockWidth = (width+31) >> 5;
+	    this._grid = new Array(this._blockWidth * height);
+	    var initBlock = interior ? ~0 : 0;
 	    for (var i = 0; i < this._blockWidth * height; i ++) {
-	        this._grid.push(initBlock);
+	        this._grid[i] = initBlock;
 	    }
 	}
 
@@ -738,10 +812,10 @@
 	        throw new Error('invalid size: ' + width + 'x' + height);
 	    this._width = width;
 	    this._height = height;
-	    this._grid = [];
 	    this._blockWidth = ((width+1)+15) >> 4;
+	    this._grid = new Array(this._blockWidth * (height + 1));
 	    for (var i = 0; i < this._blockWidth * (height + 1); i ++)
-	        this._grid.push(0);
+	        this._grid[i] = 0;
 	}
 
 	/**
@@ -897,7 +971,13 @@
 	 * @return {Direction}
 	 */
 	dirs.opposite = function(dir) {
-	    return [dirs.SOUTH, dirs.WEST, dirs.NORTH, dirs.EAST][dir];
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return 2;
+	        case 1/*dirs.EAST*/: return 3;
+	        case 2/*dirs.SOUTH*/: return 0;
+	        case 3/*dirs.WEST*/: return 1;
+	        default: throw new Error('bad direction: ' + dir);
+	    }
 	};
 
 	/**
@@ -907,7 +987,13 @@
 	 * @return {integer}
 	 */
 	dirs.dx = function(dir) {
-	    return [0, 1, 0, -1][dir];
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return 0;
+	        case 1/*dirs.EAST*/: return 1;
+	        case 2/*dirs.SOUTH*/: return 0;
+	        case 3/*dirs.WEST*/: return -1;
+	        default: throw new Error('bad direction: ' + dir);
+	    }
 	};
 
 	/**
@@ -917,9 +1003,32 @@
 	 * @return {integer}
 	 */
 	dirs.dy = function(dir) {
-	    return [-1, 0, 1, 0][dir];
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return -1;
+	        case 1/*dirs.EAST*/: return 0;
+	        case 2/*dirs.SOUTH*/: return 1;
+	        case 3/*dirs.WEST*/: return 0;
+	        default: throw new Error('bad direction: ' + dir);
+	    }
 	};
 
+	/**
+	 * Moves the coordinate in the given direction
+	 *
+	 * @param {integer} x
+	 * @param {integer} y
+	 * @param {Direction} dir
+	 * @return {integer[]}
+	 */
+	dirs.move = function(x, y, dir) {
+	    switch (dir) {
+	        case 0/*dirs.NORTH*/: return [x, y-1];
+	        case 1/*dirs.EAST*/: return [x+1, y];
+	        case 2/*dirs.SOUTH*/: return [x, y+1];
+	        case 3/*dirs.WEST*/: return [x-1, y];
+	        default: throw new Error('bad direction: ' + dir);
+	    }
+	};
 
 	/**
 	 * Returns a bitmask for the direction, useful for
