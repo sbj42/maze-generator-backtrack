@@ -3,12 +3,17 @@ A recursive-backtracking maze generator algorithm
 
 This is a plugin for the `sbj42/maze-generator` package.
 
+Recursive-backtracking is like a randomized depth-first search of the
+grid.  A random passage is dug from a random starting location, making
+sure that the passage doesn't intersect itself.  At some point it
+becomes impossible for this initial passage to make any more progress.
+Then we travel back along the passage until we find a cell where we can
+create a branch.  That branch is then extended randomly until it can no
+longer proceed.  This process repeats until all cells have been connected
+to the maze.
+
 Recursive-backtracking tends to generate long, winding passages,
 with few dead-ends.
-
-This algorithm works by digging one random passage at a time, until that
-passage runs out of options.  Then it backs up to the last cell in that
-passage with an available wall and resumes digging.
 
 ```
 ___________________________________________________
